@@ -12,7 +12,7 @@ Upload to IBM_MQ_9.1_LINUX_X86-64_TRIAL.tar.gz to s3
 Red Hat Enterprise Linux 7.6 (HVM), SSD Volume Type - ami-011b3ccf1bd6db744 (64-bit x86) / ami-0e3688b4a755ad736 (64-bit Arm)
 Select EC2 - t2.large
 Create IAM Role for EC2 to access s3 -> Select AmazonS3FullAccess on permissions tab -> Role Name MQFELLOW-S3FullAccess
-ssh -i "blockchain.pem" ec2-user@aaaaaaaa.compute-1.amazonaws.com
+ssh -i "myown.pem" ec2-user@aaaaaaaa.compute-1.amazonaws.com
 ```
 
 ### Install AWSCLI
@@ -257,7 +257,7 @@ go to the instance ip
 enable traffic to all for testing purposes in sg
 
 ```
-ssh -i "blockchain.pem" ec2-user@IP3
+ssh -i "myown.pem" ec2-user@IP3
 
 cd ~
 curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
@@ -344,9 +344,9 @@ echo "passw0rd" | sudo passwd --stdin mqm
 
 cd /media/mqfellow-efs/qmgrs/PSAP/\@ipcc/
 
-scp -i "blockchain.pem" blockchain.pem ec2-user@IP1:/home/ec2-user
+scp -i "myown.pem" myown.pem ec2-user@IP1:/home/ec2-user
 
-sudo scp -i "blockchain.pem" /media/mqfellow-efs/qmgrs/PSAP/\@ipcc/AMQCLCHL.TAB ec2-user@IP3:/home/ec2-user
+sudo scp -i "myown.pem" /media/mqfellow-efs/qmgrs/PSAP/\@ipcc/AMQCLCHL.TAB ec2-user@IP3:/home/ec2-user
 ```
 
 ### Set TAB permission on IP3
@@ -452,4 +452,3 @@ message <Message 4>
 message <Message 5>
 message <Message 6>
 ```
-
