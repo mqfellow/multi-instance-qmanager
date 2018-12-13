@@ -8,7 +8,7 @@ Upload to IBM_MQ_9.1_LINUX_X86-64_TRIAL.tar.gz to s3
 Red Hat Enterprise Linux 7.6 (HVM), SSD Volume Type - ami-011b3ccf1bd6db744 (64-bit x86) / ami-0e3688b4a755ad736 (64-bit Arm)
 Select EC2 - t2.large
 Create IAM Role for EC2 to access s3 -> Select AmazonS3FullAccess on permissions tab -> Role Name MQFELLOW-S3FullAccess
-ssh -i "blockchain.pem" ec2-user@ec2-54-196-124-22.compute-1.amazonaws.com
+ssh -i "blockchain.pem" ec2-user@aaaaaaaa.compute-1.amazonaws.com
 ```
 
 ### Install AWSCLI
