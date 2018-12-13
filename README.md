@@ -63,3 +63,50 @@ in CFT
 echo "passw0rd" | passwd --stdin mqm 
 su - mqm -c 'dspmqver'
 ```
+
+### EFS Setup
+
+Source https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html
+
+select two subnet 
+select sg 
+Choose performance mode
+General Purpose
+Choose throughput mode
+Bursting
+
+Enable encryption
+If you enable encryption for your file system, all data on your file system will be encrypted at rest. You can select a KMS key from your account to protect your file system, or you can provide the ARN of a key from a different account. Encryption of data at rest can only be enabled during file system creation. Encryption of data in transit is configured when mounting your file system.
+
+Enable encryption of data at rest - 
+Key ARN	arn:aws:kms:us-east-1:962934755172:key/e86a4ce8-5f3f-4fa1-98eb-3fe818ac5752
+Description	Default master key that protects my EFS filesystems when no other key is defined
+
+It will create two ENI
+
+DNS name	fs-7a74b89b.efs.us-east-1.amazonaws.com
+Amazon EC2 mount instructions (from local VPC)
+Amazon EC2 mount instructions (across VPC peering connection)
+On-premises mount instructions
+
+To set up your EC2 instance:
+
+Using the Amazon EC2 console, associate your EC2 instance with a VPC security group that enables access to your mount target. For example, if you assigned the "default" security group to your mount target, you should assign the "default" security group to your EC2 instance. Learn more
+Open an SSH client and connect to your EC2 instance. (Find out how to connect.)
+If you're using an Amazon Linux EC2 instance, install the EFS mount helper with the following command:
+sudo yum install -y amazon-efs-utils
+You can still use the EFS mount helper if you're not using an Amazon Linux instance. Learn more
+
+sudo yum install -y nfs-utils
+
+sudo mkdir /media/mqfellow-efs
+
+before mounting, ensure that security group i.e. default is added into the instance.
+
+sudo mount -t nfs4  -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-7a74b89b.efs.us-east-1.amazonaws.com:/ /media/mqfellow-efs
+
+cd /media/mqfellow-efs
+sudo chmod go+rw .
+
+sudo umount efs
+
