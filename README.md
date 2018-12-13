@@ -1,6 +1,8 @@
 # multi-instance-qmanager
 Instructions for multi-instance qmanager on two AZs
 
+Demo on YouTube: https://youtu.be/f-TmzA0gn1I (ibm-mq v9.1 multi instance QManager HA demo using AWS EC2 & EFS)
+
 ### Prepare MQ Binary in EC2 / S3
 
 ```
