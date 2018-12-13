@@ -242,3 +242,210 @@ QMNAME(PSAP)                                              STANDBY(Permitted)
 
 ```
 
+
+### Create IP3 for sample  MQ HA Client
+
+ec2 type 2GB t2.large
+use IAM role for downloading the MQ installation
+use subnet 1c - to differentiate to two subnet 1a and 1b used by efs and two mq instances
+
+go to the instance ip
+enable traffic to all for testing purposes in sg
+
+```
+ssh -i "blockchain.pem" ec2-user@IP3
+
+cd ~
+curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+sudo yum install unzip -y
+unzip awscli-bundle.zip
+sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+aws s3 cp s3://mqfellow-us-east-1/mq-installer/IBM_MQ_9.1_LINUX_X86-64_TRIAL.tar.gz /home/ec2-user/IBM_MQ_9.1_LINUX_X86-64_TRIAL.tar.gz
+tar -xzvf IBM_MQ_9.1_LINUX_X86-64_TRIAL.tar.gz
+cd MQServer
+echo 1 | sudo ./mqlicense.sh 
+sudo rpm -ivh MQSeriesRuntime*.rpm
+sudo rpm -ivh MQSeriesJRE*.rpm
+sudo rpm -ivh MQSeriesJava*.rpm
+sudo rpm -ivh MQSeriesServer*.rpm
+sudo rpm -ivh MQSeriesWeb*.rpm
+sudo rpm -ivh MQSeriesFTBase*.rpm
+sudo rpm -ivh MQSeriesFTAgent*.rpm
+sudo rpm -ivh MQSeriesFTService*.rpm
+sudo rpm -ivh MQSeriesFTLogger*.rpm
+sudo rpm -ivh MQSeriesFTTools*.rpm
+sudo rpm -ivh MQSeriesAMQP*.rpm
+sudo rpm -ivh MQSeriesAMS*.rpm
+sudo rpm -ivh MQSeriesXRService*.rpm
+sudo rpm -ivh MQSeriesExplorer*.rpm
+sudo rpm -ivh MQSeriesGSKit*.rpm
+sudo rpm -ivh MQSeriesClient*.rpm
+sudo rpm -ivh MQSeriesMan*.rpm
+sudo rpm -ivh MQSeriesMsg*.rpm
+sudo rpm -ivh MQSeriesSamples*.rpm
+sudo rpm -ivh MQSeriesSDK*.rpm
+sudo rpm -ivh MQSeriesSFBridge*.rpm
+sudo rpm -ivh MQSeriesBCBridge*.rpm
+sudo rpm -qa | grep MQ
+
+cd /opt/mqm/samp/bin/
+$ ./amqsputc QL.A QM01
+Sample AMQSPUT0 start
+MQCONNX ended with reason code 2058
+```
+
+### Create the mqsc for PSAP
+
+```
+psap.mqsc
+
+DEFINE QLOCAL(SOURCE) REPLACE
+DEFINE QLOCAL(TARGET) REPLACE
+DEFINE CHANNEL(CHANNEL1) CHLTYPE(SVRCONN)  TRPTYPE(TCP) +
+       MCAUSER('mqm') REPLACE
+DEFINE CHANNEL(CHANNEL1) CHLTYPE(CLNTCONN) TRPTYPE(TCP) +
+CONNAME('54.196.124.22(1414),34.200.250.72(1414)') QMNAME(PSAP) REPLACE
+START CHANNEL(CHANNEL1)
+
+DEFINE LISTENER(LISTENER.TCP) TRPTYPE(TCP) CONTROL(QMGR) REPLACE
+START LISTENER(LISTENER.TCP)
+
+ALTER QMGR CONNAUTH(' ')
+ALTER QMGR CHLAUTH(DISABLED)
+
+runmqsc PSAP < psap.mqsc > psap.mqsc.report
+cat psap.mqsc.report
+```
+
+### Testing local mqm on IP1 - before testing on IP3 with amqsputc
+
+```
+$ ./amqsput SOURCE PSAP
+Sample AMQSPUT0 start
+target queue is SOURCE
+aaaaa
+
+Sample AMQSPUT0 end
+-bash-4.2$ ./amqsget SOURCE PSAP
+Sample AMQSGET0 start
+message <aaaaa>
+
+```
+
+### On IP1, copy the tab file to IP3
+
+```
+Set MQ password on IP3 to send the TAB file. Will not work. Use pem instead
+echo "passw0rd" | sudo passwd --stdin mqm 
+
+cd /media/mqfellow-efs/qmgrs/PSAP/\@ipcc/
+
+scp -i "blockchain.pem" blockchain.pem ec2-user@IP1:/home/ec2-user
+
+sudo scp -i "blockchain.pem" /media/mqfellow-efs/qmgrs/PSAP/\@ipcc/AMQCLCHL.TAB ec2-user@IP3:/home/ec2-user
+```
+
+### Set TAB permission on IP3
+
+```
+sudo cp AMQCLCHL.TAB /var/mqm/
+sudo chown mqm.mqm /var/mqm/AMQCLCHL.TAB
+su - mqm
+cd ~
+chmod 755 AMQCLCHL.TAB
+cd /opt/mqm/samp/bin
+./amqsputc SOURCE PSAP
+Sample AMQSPUT0 start
+MQCONNX ended with reason code 2035
+
+Set env variable for cddt
+
+$ export MQCDDTURL=file:///var/mqm/AMQCLCHL.TAB
+$ echo $MQCDDTURL
+file:///var/mqm/AMQCLCHL.TAB
+```
+
+### Using ec2-user - test connection to mq server
+```
+sudo yum install telnet -y
+telnet IP1 1414 accepted/active
+telnet IP2 1414 refused/standby
+```
+
+### Disable QMGR CHLAUTH temporarily for POC purpose. Not recommended in prod
+
+```
+runmqsc PSAP
+
+DIS QMGR CONNAUTH
+     3 : DIS QMGR CONNAUTH
+AMQ8408I: Display Queue Manager details.
+   QMNAME(PSAP)                         
+   CONNAUTH(SYSTEM.DEFAULT.AUTHINFO.IDPWOS)
+ALTER QMGR CONNAUTH(' ')
+     4 : ALTER QMGR CONNAUTH(' ')
+AMQ8005I: IBM MQ queue manager changed.
+ALTER QMGR CHLAUTH(DISABLED)
+     5 : ALTER QMGR CHLAUTH(DISABLED)
+AMQ8005I: IBM MQ queue manager changed.
+DIS QMGR CONNAUTH CHLAUTH
+     6 : DIS QMGR CONNAUTH CHLAUTH
+AMQ8408I: Display Queue Manager details.
+   QMNAME(PSAP)                            CHLAUTH(DISABLED)
+   CONNAUTH( )                          
+REFRESH SECURITY
+     7 : REFRESH SECURITY
+AMQ8560I: IBM MQ security cache refreshed.
+
+Follow this intruction to fix the CHLAUTH issue
+
+https://www.ibm.com/developerworks/community/blogs/aimsupport/entry/blocked_by_chlauth_why?lang=en
+
+```
+
+
+### Testing on IP3 wih MQ Sample Binary
+
+```
+$ export MQCCDTURL=file:///var/mqm/AMQCLCHL.TAB
+$ echo $MQCCDTURL
+file:///var/mqm/AMQCLCHL.TAB
+
+$ ./amqsputc SOURCE PSAP
+Sample AMQSPUT0 start
+target queue is SOURCE
+AAAAAVVV
+ssss
+
+Sample AMQSPUT0 end
+
+$ ./amqsphac SOURCE PSAP
+Sample AMQSPHAC start
+target queue is SOURCE
+message <Message 1>
+message <Message 2>
+message <Message 3>
+message <Message 4>
+message <Message 5>
+
+next window 
+$ export MQCCDTURL=file:///var/mqm/AMQCLCHL.TAB
+$ cd /opt/mqm/samp/bin/
+
+./amqsmhac -s SOURCE -t TARGET -m PSAP
+Sample AMQSMHAC start
+
+$ cd /opt/mqm/samp/bin/
+$ export MQCCDTURL=file:///var/mqm/AMQCLCHL.TAB
+$ ./amqsghac TARGET PSAP
+Sample AMQSGHAC start
+message <AAAAAVVV>
+message <ssss>
+message <Message 1>
+message <Message 2>
+message <Message 3>
+message <Message 4>
+message <Message 5>
+message <Message 6>
+```
+
