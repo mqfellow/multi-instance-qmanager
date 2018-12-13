@@ -120,9 +120,11 @@ sudo umount efs to unmount - not required.
 ### IP1 MQ EFS Configuration 
 
 Multi-instance queue managers
+
 https://www.ibm.com/support/knowledgecenter/en/SSFKSJ_9.1.0/com.ibm.mq.con.doc/q018140_.htm
 
 Creating Multi Instance Queue Managers On Linux using MQv7.1
+
 https://www.youtube.com/watch?v=Fv4tLQmsHpI
 
 ```
@@ -299,6 +301,8 @@ MQCONNX ended with reason code 2058
 ```
 
 ### Create the mqsc for PSAP
+
+HA Applications Automatic Reconnection to Multi Instance Queue Managers using CCDT - https://www.youtube.com/watch?v=vlqWhyc5c-8 
 
 ```
 psap.mqsc
