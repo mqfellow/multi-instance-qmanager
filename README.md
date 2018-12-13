@@ -103,10 +103,12 @@ sudo mkdir /media/mqfellow-efs
 
 before mounting, ensure that security group i.e. default is added into the instance.
 
+```
 sudo mount -t nfs4  -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport fs-7a74b89b.efs.us-east-1.amazonaws.com:/ /media/mqfellow-efs
 
-cd /media/mqfellow-efs
-sudo chmod go+rw .
-
-sudo umount efs
+mkdir -p /media/mqfellow-efs/logs /media/mqfellow-efs/qmgrs 
+sudo chown -R /media/mqfellow-efs/
+sudo chmod -R ug+rwx /media/mqfellow-efs/
+```
+sudo umount efs to unmount - not required.
 
